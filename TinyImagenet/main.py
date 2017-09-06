@@ -24,7 +24,10 @@ def train(batch_size,classes,FLAGS):
     model = AlexNet_TI.model(classes,"train",batch_size)
 
 
-    model.build(images,labels)
+    if(FLAGS.cnn=="dws"):
+        model.build_dw(images, labels)
+    else:
+        model.build(images, labels)
 
     param_stats = tf.contrib.tfprof.model_analyzer.print_model_analysis(
         tf.get_default_graph(),
@@ -81,7 +84,7 @@ def train(batch_size,classes,FLAGS):
 
         def after_run(self, run_context, run_values):
             train_step = run_values.results
-            self._lrn_rate=0.01/(10**(train_step/5000))
+            self._lrn_rate=0.01/(10**(train_step/10000))
 
 
     with tf.train.MonitoredTrainingSession(
@@ -99,6 +102,88 @@ def train(batch_size,classes,FLAGS):
             #print("___")
             mon_sess.run(train_op)
 
+def eval(batch_size,classes,FLAGS):
+    print("eval starts")
+    filenames, all_labels = input_pipeline.read_labeled_image_list("validation_labels.csv")
+    images, labels = input_pipeline.load_batches(image_filenames=filenames,
+                 label_filenames=all_labels,
+                 network="AlexNet",
+                 shape=(60, 60, 3),
+                 batch_size=100)
+    print("labels shale")
+    print(labels.get_shape)
+
+
+    model = AlexNet_TI.model(classes,"test",batch_size)
+
+
+    if(FLAGS.cnn=="dws"):
+        model.build_dw(images, labels)
+    else:
+        model.build(images, labels)
+
+    saver = tf.train.Saver()
+    summary_writer = tf.summary.FileWriter("resnet_model/test")
+
+    sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
+    tf.train.start_queue_runners(sess)
+    best_precision = 0.0
+
+    i=0
+    total_duration=0
+
+    while i<20:
+        try:
+            ckpt_state = tf.train.get_checkpoint_state("resnet_model")
+        except tf.errors.OutOfRangeError as e:
+            tf.logging.error('Cannot restore checkpoint: %s', e)
+            continue
+        if not (ckpt_state and ckpt_state.model_checkpoint_path):
+            tf.logging.info('No model to eval yet at %s', "resnet_model")
+            continue
+        tf.logging.info('Loading checkpoint %s', ckpt_state.model_checkpoint_path)
+        saver.restore(sess, ckpt_state.model_checkpoint_path)
+
+        model_summaries = tf.summary.merge_all()
+
+        total_prediction, correct_prediction = 0, 0
+        duration=0
+        for _ in six.moves.range(50):
+            start_time = time.time()
+            (summaries, loss, predictions, truth, train_step) = sess.run(
+                [model_summaries, model.cost, model.predictions,
+                 labels, model.global_step])
+            duration += time.time() - start_time
+            #print("duration is: "+str(duration))
+            #print(duration)
+            truth = np.argmax(truth, axis=1)
+            predictions = np.argmax(predictions, axis=1)
+            correct_prediction += np.sum(truth == predictions)
+            total_prediction += predictions.shape[0]
+        print("duration is: " + str(duration))
+        total_duration += duration
+        precision = 1.0 * correct_prediction / total_prediction
+        best_precision = max(precision, best_precision)
+
+        precision_summ = tf.Summary()
+        precision_summ.value.add(
+            tag='Precision', simple_value=precision)
+        summary_writer.add_summary(precision_summ, train_step)
+        best_precision_summ = tf.Summary()
+        best_precision_summ.value.add(
+            tag='Best Precision', simple_value=best_precision)
+        summary_writer.add_summary(best_precision_summ, train_step)
+        summary_writer.add_summary(summaries, train_step)
+        tf.logging.info('loss: %.3f, precision: %.3f, best precision: %.3f' %
+                        (loss, precision, best_precision))
+        summary_writer.flush()
+
+
+        time.sleep(60)
+        i+=1
+    print("final duration is: "+str(total_duration/20))
+
+
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('cnn', 'normal', 'normal or dws')
 tf.app.flags.DEFINE_string('mode', 'train', 'train or test.')
@@ -109,9 +194,9 @@ def main(_):
     print("start program")
     with tf.device(dev):
         if FLAGS.mode=="train":
-            train(100,10,FLAGS)
+            train(100,200,FLAGS)
         else:
-            eval(1,10,FLAGS)
+            eval(100,200,FLAGS)
 
 
 if __name__ == '__main__':
