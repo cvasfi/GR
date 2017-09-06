@@ -123,7 +123,7 @@ def eval(batch_size,classes,FLAGS):
         model.build(images, labels)
 
     saver = tf.train.Saver()
-    summary_writer = tf.summary.FileWriter("resnet_model/test")
+    summary_writer = tf.summary.FileWriter("alexNet_model/test")
 
     sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     tf.train.start_queue_runners(sess)
@@ -134,12 +134,12 @@ def eval(batch_size,classes,FLAGS):
 
     while i<20:
         try:
-            ckpt_state = tf.train.get_checkpoint_state("resnet_model")
+            ckpt_state = tf.train.get_checkpoint_state("alexNet_model")
         except tf.errors.OutOfRangeError as e:
             tf.logging.error('Cannot restore checkpoint: %s', e)
             continue
         if not (ckpt_state and ckpt_state.model_checkpoint_path):
-            tf.logging.info('No model to eval yet at %s', "resnet_model")
+            tf.logging.info('No model to eval yet at %s', "alexNet_model")
             continue
         tf.logging.info('Loading checkpoint %s', ckpt_state.model_checkpoint_path)
         saver.restore(sess, ckpt_state.model_checkpoint_path)
