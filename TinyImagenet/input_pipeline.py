@@ -35,9 +35,12 @@ def load_batches(image_filenames=None,
             # Any resizing or processing (eg. normalising) goes here
             with tf.name_scope('normalize'):
                 image_data = tf.cast(image_data, tf.float32)
-                image_data = tf.image.per_image_standardization(image_data)
+                #random crop and flip
                 if network=="AlexNet":
-                    image_data = tf.image.resize_image_with_crop_or_pad(image_data,60,60)
+                    image_data = tf.random_crop(image_data, [60, 60, 3])
+                image_data=tf.image.random_flip_left_right(image_data)
+
+                image_data = tf.image.per_image_standardization(image_data)
                 image_data.set_shape(shape)
 
 
