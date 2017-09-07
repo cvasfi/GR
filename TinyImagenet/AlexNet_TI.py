@@ -115,7 +115,8 @@ class model(object):
         with tf.variable_scope("depthwise"):
             dw_weights = tf.get_variable(
                 'DW', [ksize, ksize, ins, dw_outs],
-                tf.float32, initializer=tf.contrib.layers.xavier_initializer())
+                tf.float32, initializer=tf.random_normal_initializer(
+                    stddev=np.sqrt(2.0 / n)))
             dws = tf.nn.depthwise_conv2d(x, dw_weights, strides, padding='VALID')
             dws = self.pRelu(dws)
             #
