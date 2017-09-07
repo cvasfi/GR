@@ -55,6 +55,7 @@ class model(object):
               logits=self.logits, labels=labels)
           self.cost = tf.reduce_mean(xent, name='xent')
           #self.cost += self._decay()
+
     def build_dw(self,x,labels):
         print("dw_separable")
         input=tf.identity(x,"input")
@@ -111,17 +112,15 @@ class model(object):
         ins = x.get_shape()[-1]
         n = ksize * ksize * 1
         dw_outs = 1  # depth multiplier: 1 filter per channel
-        with tf.variable_scope("dws_conv"):
-            with tf.variable_scope("depthwise"):
-                dw_weights = tf.get_variable(
-                    'DW', [ksize, ksize, ins, 1],
-                    tf.float32, initializer=tf.contrib.layers.xavier_initializer())
-            with tf.variable_scope("pointwise"):
-                pw_weights=tf.get_variable(
-                    'DW', [1, 1, ins, outs],
-                    tf.float32, initializer=tf.contrib.layers.xavier_initializer())
-            dws = tf.nn.separable_conv2d(x,dw_weights,pw_weights,strides,padding='VALID')
-            return self.pRelu(dws)
+        with tf.variable_scope("depthwise"):
+            dw_weights = tf.get_variable(
+                'DW', [ksize, ksize, ins, dw_outs],
+                tf.float32, initializer=tf.contrib.layers.xavier_initializer())
+            dws = tf.nn.depthwise_conv2d(x, dw_weights, strides, padding='VALID')
+            dws = self.pRelu(dws)
+            #
+        with tf.variable_scope("pointwise"):
+            return self.conv_relu(dws, 1, outs, strides=[1, 1, 1, 1])
 
 
     def pRelu(self,_x):
