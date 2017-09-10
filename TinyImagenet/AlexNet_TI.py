@@ -18,7 +18,7 @@ class model(object):
         input=tf.identity(x,"input")
 
         with tf.variable_scope('C1'):
-            x=self.conv_relu(x,3,96)
+            x=self.conv_relu(input,3,96)
         with tf.variable_scope('P1'):
             x=tf.nn.max_pool(x,[1,2,2,1],[1,2,2,1],padding='VALID')
         with tf.variable_scope('C2'):

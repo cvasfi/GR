@@ -5,27 +5,30 @@ import sys
 import time
 import input_pipeline
 import AlexNet_TI
-
-
-_extra_train_ops = []
+import ResNet50_TI
 
 def train(batch_size,classes,FLAGS):
     print("train starts")
     filenames, all_labels = input_pipeline.read_labeled_image_list("training_labels.csv")
     images, labels = input_pipeline.load_batches(image_filenames=filenames,
                  label_filenames=all_labels,
-                 network="AlexNet",
-                 shape=(60, 60, 3),
-                 batch_size=100)
+                 network=FLAGS.network,
+                 shape=(64, 64, 3),
+                 batch_size=batch_size)
     print("labels shale")
     print(labels.get_shape)
 
 
-    model = AlexNet_TI.model(classes,"train",batch_size)
-
+    if(FLAGS.network=="alexnet"):
+        model = AlexNet_TI.model(classes,"train",batch_size)
+        model_path="alexNet_model"
+    elif(FLAGS.network=="resnet50"):
+        model= ResNet50_TI.model(classes,"train",batch_size)
+        model_path="resnet50_model"
 
     if(FLAGS.cnn=="dws"):
         model.build_dw(images, labels)
+        model_path=model_path+"_dw"
     else:
         model.build(images, labels)
 
@@ -61,7 +64,7 @@ def train(batch_size,classes,FLAGS):
 
     summary_hook = tf.train.SummarySaverHook(
         save_steps=100,
-        output_dir="alexNet_model/train",
+        output_dir=(model_path+"/train"),
         summary_op=tf.summary.merge([summaries,
                                      tf.summary.scalar('Precision', precision)]))
 
@@ -84,11 +87,11 @@ def train(batch_size,classes,FLAGS):
 
         def after_run(self, run_context, run_values):
             train_step = run_values.results
-            self._lrn_rate=0.01/(10**(train_step/10000))
+            self._lrn_rate=0.01/(10**(train_step/40000))
 
 
     with tf.train.MonitoredTrainingSession(
-            checkpoint_dir="alexNet_model",
+            checkpoint_dir=model_path,
             hooks=[logging_hook, _LearningRateSetterHook()],
             chief_only_hooks=[summary_hook],
             # Since we provide a SummarySaverHook, we need to disable default
@@ -107,23 +110,27 @@ def eval(batch_size,classes,FLAGS):
     filenames, all_labels = input_pipeline.read_labeled_image_list("validation_labels.csv")
     images, labels = input_pipeline.load_batches(image_filenames=filenames,
                  label_filenames=all_labels,
-                 network="AlexNet",
+                 network=FLAGS.network,
                  shape=(60, 60, 3),
-                 batch_size=100)
+                 batch_size=batch_size)
     print("labels shale")
     print(labels.get_shape)
 
-
-    model = AlexNet_TI.model(classes,"test",batch_size)
-
+    if(FLAGS.network=="alexnet"):
+        model = AlexNet_TI.model(classes,"test",batch_size)
+        model_path="alexNet_model"
+    elif(FLAGS.network=="resnet50"):
+        model= ResNet50_TI.model(classes,"test",batch_size)
+        model_path="resnet50_model"
 
     if(FLAGS.cnn=="dws"):
         model.build_dw(images, labels)
+        model_path=model_path+"_dw"
     else:
         model.build(images, labels)
 
     saver = tf.train.Saver()
-    summary_writer = tf.summary.FileWriter("alexNet_model/test")
+    summary_writer = tf.summary.FileWriter(model_path+"/test")
 
     sess = tf.Session(config=tf.ConfigProto(allow_soft_placement=True))
     tf.train.start_queue_runners(sess)
@@ -134,12 +141,12 @@ def eval(batch_size,classes,FLAGS):
 
     while i<20:
         try:
-            ckpt_state = tf.train.get_checkpoint_state("alexNet_model")
+            ckpt_state = tf.train.get_checkpoint_state(model_path)
         except tf.errors.OutOfRangeError as e:
             tf.logging.error('Cannot restore checkpoint: %s', e)
             continue
         if not (ckpt_state and ckpt_state.model_checkpoint_path):
-            tf.logging.info('No model to eval yet at %s', "alexNet_model")
+            tf.logging.info('No model to eval yet at %s', model_path)
             continue
         tf.logging.info('Loading checkpoint %s', ckpt_state.model_checkpoint_path)
         saver.restore(sess, ckpt_state.model_checkpoint_path)
@@ -187,6 +194,7 @@ def eval(batch_size,classes,FLAGS):
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('cnn', 'normal', 'normal or dws')
 tf.app.flags.DEFINE_string('mode', 'train', 'train or test.')
+tf.app.flags.DEFINE_string('network', 'alexnet', 'alexnet or resnet.')
 
 def main(_):
     dev = '/gpu:0'

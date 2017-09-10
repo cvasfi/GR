@@ -15,7 +15,7 @@ def read_labeled_image_list(image_list_file):
 
 def load_batches(image_filenames=None,
                  label_filenames=None,
-                 network="AlexNet",
+                 network="alexnet",
                  shape=(64, 64, 3),
                  batch_size=100):
     min_after_dequeue = 1000
@@ -36,8 +36,12 @@ def load_batches(image_filenames=None,
             with tf.name_scope('normalize'):
                 image_data = tf.cast(image_data, tf.float32)
                 #random crop and flip
-                if network=="AlexNet":
+                if network=="alexnet":
                     image_data = tf.random_crop(image_data, [60, 60, 3])
+                    shape=[60,60,3]
+                elif network=="resnet":
+                    image_data = tf.random_crop(image_data, [56, 56, 3])
+                    shape=[56,56,3]
                 image_data=tf.image.random_flip_left_right(image_data)
 
                 image_data = tf.image.per_image_standardization(image_data)
