@@ -202,9 +202,9 @@ def main(_):
     print("start program")
     with tf.device(dev):
         if FLAGS.mode=="train":
-            train(100,200,FLAGS)
+            train(50,200,FLAGS)
         else:
-            eval(100,200,FLAGS)
+            eval(50,200,FLAGS)
 
 
 if __name__ == '__main__':
