@@ -111,7 +111,7 @@ def eval(batch_size,classes,FLAGS):
     images, labels = input_pipeline.load_batches(image_filenames=filenames,
                  label_filenames=all_labels,
                  network=FLAGS.network,
-                 shape=(60, 60, 3),
+                 shape=(64, 64, 3),
                  batch_size=batch_size)
     print("labels shale")
     print(labels.get_shape)
