@@ -65,7 +65,7 @@ else:
     if(FLAGS.network=="resnet"):
         model = keras_resnet.ResnetBuilder.build_resnet_50((img_channels, img_rows, img_cols), nb_classes)
     if FLAGS.network=="alexnet":
-        model= keras_alexnet.AlexNetBuilder.build((img_channels, img_rows, img_cols), nb_classes)
+        model= keras_alexnet.AlexNetBuilder.buildAlexnet((img_channels, img_rows, img_cols), nb_classes)
 
 model.compile(loss='categorical_crossentropy',
               optimizer='adam',

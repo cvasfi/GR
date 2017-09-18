@@ -72,6 +72,6 @@ class AlexNetBuilder(object):
         return model
 
     @staticmethod
-    def build(input_shape, num_outputs):
+    def buildAlexnet(input_shape, num_outputs):
         return AlexNetBuilder.build(input_shape, num_outputs)
 
