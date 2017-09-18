@@ -55,7 +55,8 @@ X_test -= mean_image
 X_train /= 128.
 X_test /= 128.
 if os.path.isfile(FLAGS.network+".h5"):
-    model = load_model('model_compressed.h5')
+    model = load_model(FLAGS.network+".h5")
+    print("model loaded")
 else:
     model = keras_resnet.ResnetBuilder.build_resnet_50((img_channels, img_rows, img_cols), nb_classes)
 
