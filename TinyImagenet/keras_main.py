@@ -16,6 +16,7 @@ import os.path
 
 import numpy as np
 import keras_resnet
+import keras_alexnet
 import keras_input
 
 FLAGS = tf.app.flags.FLAGS
@@ -58,7 +59,10 @@ if os.path.isfile(FLAGS.network+".h5"):
     model = load_model(FLAGS.network+".h5")
     print("model loaded")
 else:
-    model = keras_resnet.ResnetBuilder.build_resnet_50((img_channels, img_rows, img_cols), nb_classes)
+    if(FLAGS.network=="resnet"):
+        model = keras_resnet.ResnetBuilder.build_resnet_50((img_channels, img_rows, img_cols), nb_classes)
+    if FLAGS.network=="alexnet":
+        model= keras_alexnet.AlexNetBuilder.build((img_channels, img_rows, img_cols), nb_classes)
 
 model.compile(loss='categorical_crossentropy',
               optimizer='adam',
