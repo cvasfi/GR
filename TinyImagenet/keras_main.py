@@ -19,6 +19,9 @@ import keras_resnet
 import keras_alexnet
 import keras_input
 
+import sys
+sys.setrecursionlimit(10000)
+
 FLAGS = tf.app.flags.FLAGS
 tf.app.flags.DEFINE_string('mode', 'normal', 'train or test')
 tf.app.flags.DEFINE_string('cnn', 'normal', 'normal or dws')
