@@ -9,8 +9,10 @@ from __future__ import print_function
 from keras.datasets import cifar10
 from keras.preprocessing.image import ImageDataGenerator
 from keras.utils import np_utils
+from keras.models import load_model
 from keras.callbacks import ReduceLROnPlateau, CSVLogger, EarlyStopping, ModelCheckpoint
 import tensorflow as tf
+import os.path
 
 import numpy as np
 import keras_resnet
@@ -26,9 +28,9 @@ early_stopper = EarlyStopping(min_delta=0.001, patience=10)
 csv_logger = CSVLogger(FLAGS.network+'.csv')
 model_saver= ModelCheckpoint(FLAGS.network+".h5")
 
-batch_size = 100
+batch_size = 50
 nb_classes = 200
-nb_epoch = 200
+nb_epoch = 1000
 data_augmentation = True
 
 # input image dimensions
@@ -52,8 +54,11 @@ X_train -= mean_image
 X_test -= mean_image
 X_train /= 128.
 X_test /= 128.
+if os.path.isfile(FLAGS.network+".h5"):
+    model = load_model('model_compressed.h5')
+else:
+    model = keras_resnet.ResnetBuilder.build_resnet_50((img_channels, img_rows, img_cols), nb_classes)
 
-model = keras_resnet.ResnetBuilder.build_resnet_50((img_channels, img_rows, img_cols), nb_classes)
 model.compile(loss='categorical_crossentropy',
               optimizer='adam',
               metrics=['accuracy'])
@@ -62,7 +67,7 @@ if not data_augmentation:
     print('Not using data augmentation.')
     model.fit(X_train, Y_train,
               batch_size=batch_size,
-              nb_epoch=1000,
+              nb_epoch=nb_epoch,
               validation_data=(X_test, Y_test),
               shuffle=True,
               callbacks=[lr_reducer, early_stopper, csv_logger,model_saver])
@@ -89,7 +94,7 @@ else:
     model.fit_generator(datagen.flow(X_train, Y_train, batch_size=batch_size),
                         steps_per_epoch=X_train.shape[0] // batch_size,
                         validation_data=(X_test, Y_test),
-                        epochs=1000, verbose=1, max_q_size=100,
+                        epochs=nb_epoch, verbose=1, max_q_size=100,
                         callbacks=[lr_reducer, early_stopper, csv_logger, model_saver])
 
     print(model.evaluate(X_test, y_test))
