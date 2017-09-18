@@ -32,7 +32,7 @@ early_stopper = EarlyStopping(min_delta=0.001, patience=10)
 csv_logger = CSVLogger(FLAGS.network+'.csv')
 model_saver= ModelCheckpoint(FLAGS.network+".h5")
 
-batch_size = 50
+batch_size = 50 if FLAGS.network=="resnet" else 100
 nb_classes = 200
 nb_epoch = 1000
 data_augmentation = True
