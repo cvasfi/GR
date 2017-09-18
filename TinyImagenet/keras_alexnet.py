@@ -42,8 +42,10 @@ def _conv_relu(**conv_params):
 
 class AlexNetBuilder(object):
     @staticmethod
-    def build(input_shape, num_outputs, block_fn, repetitions):
-
+    def build(input_shape, num_outputs):
+        # Permute dimension order if necessary
+        if K.image_dim_ordering() == 'tf':
+            input_shape = (input_shape[1], input_shape[2], input_shape[0])
 
         input = Input(shape=input_shape)
         output = _conv_relu(filters=96, kernel_size=(3, 3), strides=(1, 1))(input)
