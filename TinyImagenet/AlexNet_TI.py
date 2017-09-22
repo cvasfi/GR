@@ -9,6 +9,7 @@ class model(object):
 
     def __init__(self,num_classes,mode,batch_size):
         print("alexNet tiny imagenet")
+        self._extra_train_ops = []
         self.num_classes=num_classes
         self.mode=mode
         self.batch_size=batch_size

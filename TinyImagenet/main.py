@@ -58,7 +58,7 @@ def train(batch_size,classes,FLAGS):
         zip(grads, trainable_variables),
         global_step=tf.contrib.framework.get_or_create_global_step(), name='train_step')
 
-    train_ops = [apply_op]
+    train_ops = [apply_op]+ model._extra_train_ops
     train_op = tf.group(*train_ops)
 
 
@@ -139,7 +139,7 @@ def eval(batch_size,classes,FLAGS):
     i=0
     total_duration=0
 
-    while i<20:
+    while i<200:
         try:
             ckpt_state = tf.train.get_checkpoint_state(model_path)
         except tf.errors.OutOfRangeError as e:
