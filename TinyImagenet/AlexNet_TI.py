@@ -2,7 +2,7 @@
 import tensorflow as tf
 import numpy as np
 from tensorflow.python.training import moving_averages
-
+from LookupConvolution2d import lookup_conv2d
 
 
 class model(object):
@@ -98,7 +98,47 @@ class model(object):
               logits=self.logits, labels=labels)
           self.cost = tf.reduce_mean(xent, name='xent')
 
+    def build_lookup(self,x,labels):
+        input=tf.identity(x,"input")
 
+        with tf.variable_scope('C1'):
+            x=self.l_conv_relu(input,3,96)
+        with tf.variable_scope('P1'):
+            x=tf.nn.max_pool(x,[1,2,2,1],[1,2,2,1],padding='VALID')
+        with tf.variable_scope('C2'):
+            x=tf.pad(x,[[0, 0], [2, 2], [2, 2], [0, 0]], "CONSTANT")
+            x=self.l_conv_relu(x,5,256)
+        with tf.variable_scope('P2'):
+            x=tf.nn.max_pool(x,[1,2,2,1],[1,2,2,1],padding='VALID')
+        with tf.variable_scope('C3'):
+            x=tf.pad(x,[[0, 0], [1, 1], [1, 1], [0, 0]], "CONSTANT")
+            x=self.l_conv_relu(x,3,384)
+        with tf.variable_scope('C4'):
+            x=tf.pad(x,[[0, 0], [1, 1], [1, 1], [0, 0]], "CONSTANT")
+            x=self.l_conv_relu(x,3,384)
+        with tf.variable_scope('C5'):
+            x=tf.pad(x,[[0, 0], [1, 1], [1, 1], [0, 0]], "CONSTANT")
+            x=self.l_conv_relu(x,3,256)
+        with tf.variable_scope('P3'):
+            x=tf.nn.max_pool(x,[1,2,2,1],[1,2,2,1],padding='VALID')
+        with tf.variable_scope('FC1'):
+            x=self.fc(x,4096)
+            x=self.pRelu(x)
+            x=tf.nn.dropout(x,0.5)
+        with tf.variable_scope('FC2'):
+            x=self.fc(x,4096)
+            x=self.pRelu(x)
+            x=tf.nn.dropout(x,0.5)
+        with tf.variable_scope('FC3'):
+            x=self.fc(x,200)
+
+        self.logits=x
+        self.predictions = tf.nn.softmax(self.logits,name="softmax")
+        with tf.variable_scope('costs'):
+          xent = tf.nn.softmax_cross_entropy_with_logits(
+              logits=self.logits, labels=labels)
+          self.cost = tf.reduce_mean(xent, name='xent')
+          #self.cost += self._decay()
     def conv_relu(self,x,ksize,outs,strides=[1,1,1,1]):
         n = ksize * ksize * outs
         ins= x.get_shape()[-1]
@@ -124,6 +164,10 @@ class model(object):
         with tf.variable_scope("pointwise"):
             return self.conv_relu(dws, 1, outs, strides=[1, 1, 1, 1])
 
+    def l_conv_relu(self,x,ksize,outs, dict_size=30, i_sparsity=0.01, param_lambda=1.0, strides=1):
+        x=lookup_conv2d(x, num_outputs=outs, kernel_size=[ksize,ksize], stride=strides, dict_size=dict_size,
+                        padding=1,param_lambda=param_lambda,initial_sparsity=i_sparsity)
+        return self.pRelu(x)
 
     def pRelu(self,_x):
         alphas = tf.get_variable('alpha', _x.get_shape()[-1],

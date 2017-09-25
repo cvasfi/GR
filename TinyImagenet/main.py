@@ -29,6 +29,9 @@ def train(batch_size,classes,FLAGS):
     if(FLAGS.cnn=="dws"):
         model.build_dw(images, labels)
         model_path=model_path+"_dw"
+    elif(FLAGS.cnn=="lookup"):
+        model.build_lookup(images, labels)
+        model_path=model_path+"_l"
     else:
         model.build(images, labels)
 
@@ -126,6 +129,9 @@ def eval(batch_size,classes,FLAGS):
     if(FLAGS.cnn=="dws"):
         model.build_dw(images, labels)
         model_path=model_path+"_dw"
+    elif (FLAGS.cnn == "lookup"):
+        model.build_lookup(images, labels)
+        model_path = model_path + "_l"
     else:
         model.build(images, labels)
 
