@@ -145,7 +145,7 @@ def eval(batch_size,classes,FLAGS):
     i=0
     total_duration=0
 
-    while i<200:
+    while i<20:
         try:
             ckpt_state = tf.train.get_checkpoint_state(model_path)
         except tf.errors.OutOfRangeError as e:
@@ -192,7 +192,7 @@ def eval(batch_size,classes,FLAGS):
         summary_writer.flush()
 
 
-        time.sleep(60)
+        #   time.sleep(60)
         i+=1
     print("final duration is: "+str(total_duration/20))
 
