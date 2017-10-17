@@ -145,56 +145,53 @@ def eval(batch_size,classes,FLAGS):
     i=0
     total_duration=0
 
-    while i<20:
-        try:
-            ckpt_state = tf.train.get_checkpoint_state(model_path)
-        except tf.errors.OutOfRangeError as e:
-            tf.logging.error('Cannot restore checkpoint: %s', e)
-            continue
-        if not (ckpt_state and ckpt_state.model_checkpoint_path):
-            tf.logging.info('No model to eval yet at %s', model_path)
-            continue
-        tf.logging.info('Loading checkpoint %s', ckpt_state.model_checkpoint_path)
-        saver.restore(sess, ckpt_state.model_checkpoint_path)
+    try:
+        ckpt_state = tf.train.get_checkpoint_state(model_path)
+    except tf.errors.OutOfRangeError as e:
+        tf.logging.error('Cannot restore checkpoint: %s', e)
+    if not (ckpt_state and ckpt_state.model_checkpoint_path):
+        tf.logging.info('No model to eval yet at %s', model_path)
+    tf.logging.info('Loading checkpoint %s', ckpt_state.model_checkpoint_path)
+    saver.restore(sess, ckpt_state.model_checkpoint_path)
 
-        model_summaries = tf.summary.merge_all()
+    model_summaries = tf.summary.merge_all()
+    total_prediction, correct_prediction = 0, 0
+    duration=0
 
-        total_prediction, correct_prediction = 0, 0
-        duration=0
-        for _ in six.moves.range(50):
-            start_time = time.time()
-            (summaries, loss, predictions, truth, train_step) = sess.run(
-                [model_summaries, model.cost, model.predictions,
-                 labels, model.global_step])
-            duration += time.time() - start_time
-            #print("duration is: "+str(duration))
-            #print(duration)
-            truth = np.argmax(truth, axis=1)
-            predictions = np.argmax(predictions, axis=1)
-            correct_prediction += np.sum(truth == predictions)
-            total_prediction += predictions.shape[0]
-        print("duration is: " + str(duration))
-        total_duration += duration
-        precision = 1.0 * correct_prediction / total_prediction
-        best_precision = max(precision, best_precision)
+    for counter in six.moves.range(10000/batch_size):
+        start_time = time.time()
+        (summaries, loss, predictions, truth, train_step) = sess.run(
+            [model_summaries, model.cost, model.predictions,
+             labels, model.global_step])
+        if(counter != 0):
+            duration += time.time()-start_time
+        # print("duration is: "+str(duration))
+        # print(duration)
+    truth = np.argmax(truth, axis=1)
+    predictions = np.argmax(predictions, axis=1)
+    correct_prediction += np.sum(truth == predictions)
+    total_prediction += predictions.shape[0]
 
-        precision_summ = tf.Summary()
-        precision_summ.value.add(
-            tag='Precision', simple_value=precision)
-        summary_writer.add_summary(precision_summ, train_step)
-        best_precision_summ = tf.Summary()
-        best_precision_summ.value.add(
-            tag='Best Precision', simple_value=best_precision)
-        summary_writer.add_summary(best_precision_summ, train_step)
-        summary_writer.add_summary(summaries, train_step)
-        tf.logging.info('loss: %.3f, precision: %.3f, best precision: %.3f' %
-                        (loss, precision, best_precision))
-        summary_writer.flush()
+    precision = 1.0 * correct_prediction / total_prediction
+    best_precision = max(precision, best_precision)
 
+    precision_summ = tf.Summary()
+    precision_summ.value.add(
+        tag='Precision', simple_value=precision)
+    summary_writer.add_summary(precision_summ, train_step)
+    best_precision_summ = tf.Summary()
+    best_precision_summ.value.add(
+        tag='Best Precision', simple_value=best_precision)
+    summary_writer.add_summary(best_precision_summ, train_step)
+    summary_writer.add_summary(summaries, train_step)
+    tf.logging.info('loss: %.3f, precision: %.3f, best precision: %.3f' %
+                    (loss, precision, best_precision))
+    summary_writer.flush()
 
-        #   time.sleep(60)
-        i+=1
-    print("final duration is: "+str(total_duration/20))
+    print"average duration of a single image:" + str((duration/((10/batch_size)-1))/batch_size)
+    print"duration of a single batch:" + str((duration/((10/batch_size)-1)))
+    print"batches taken into account:" + str((((10/batch_size)-1)))
+    print"total:" + str((duration))
 
 
 FLAGS = tf.app.flags.FLAGS
