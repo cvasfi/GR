@@ -188,9 +188,9 @@ def eval(batch_size,classes,FLAGS):
                     (loss, precision, best_precision))
     summary_writer.flush()
 
-    print"average duration of a single image:" + str((duration/((10/batch_size)-1))/batch_size)
-    print"duration of a single batch:" + str((duration/((10/batch_size)-1)))
-    print"batches taken into account:" + str((((10/batch_size)-1)))
+    print"average duration of a single image:" + str((duration/((10000/batch_size)-1))/batch_size)
+    print"duration of a single batch:" + str((duration/((10000/batch_size)-1)))
+    print"batches taken into account:" + str((((10000/batch_size)-1)))
     print"total:" + str((duration))
 
 
