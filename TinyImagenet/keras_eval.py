@@ -74,7 +74,7 @@ model.compile(loss='categorical_crossentropy',
 
 print("accuracy:")
 start_time = time.time()
-print(model.evaluate(X_test, y_test))
+print(model.evaluate(X_test, Y_test,batch_size=1))
 duration = time.time() - start_time
 
 print ("duration: " + str(duration))
